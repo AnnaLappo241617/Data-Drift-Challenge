@@ -1,0 +1,4 @@
+model_version,model_name,trained_on,activated_after_batch,precision,recall,f1,roc_auc,pr_auc
+1,Model v1,creditcard.csv,initial_training,0.961038961038961,0.7551020408163265,0.8457142857142858,0.9622294296165288,0.8668740190725254
+2,Model v2,accumulated_data_through_drift_1.csv,drift_1.csv,0.0,0.0,0.0,0.4762391197694853,0.001891732743254
+3,Model v3,accumulated_data_through_drift_2.csv,drift_2.csv,0.0,0.0,0.0,0.6080117076210827,0.007350443846000399
