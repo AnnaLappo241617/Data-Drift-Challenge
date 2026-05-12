@@ -1,5 +1,5 @@
 {
-  "current_model_version": 3,
+  "current_model_version": 2,
   "feature_cols": [
     "Time",
     "V1",
@@ -37,5 +37,5 @@
     "drift_1.csv",
     "drift_2.csv"
   ],
-  "active_model_name": "Model v3"
+  "active_model_name": "Model v2"
 }

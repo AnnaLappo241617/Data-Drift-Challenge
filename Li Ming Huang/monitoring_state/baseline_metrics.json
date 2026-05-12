@@ -1,19 +1,22 @@
 {
-  "Precision": 0.961038961038961,
-  "Recall": 0.7551020408163265,
-  "F1": 0.8457142857142858,
-  "ROC-AUC": 0.9622294296165287,
-  "PR-AUC": 0.8668740190725254,
-  "Predicted Fraud Count": 77,
+  "Precision": 0.3013698630136986,
+  "Recall": 0.8979591836734694,
+  "F1": 0.4512820512820513,
+  "ROC-AUC": 0.9811472844624626,
+  "PR-AUC": 0.8724285333803994,
+  "Predicted Fraud Count": 292,
   "Actual Fraud Count": 98,
   "Confusion Matrix": [
     [
-      56861,
-      3
+      56660,
+      204
     ],
     [
-      24,
-      74
+      10,
+      88
     ]
-  ]
+  ],
+  "Best Threshold": 0.01,
+  "Best Threshold Score": 0.8979591836734694,
+  "Threshold Optimization Metric": "recall_with_precision"
 }
