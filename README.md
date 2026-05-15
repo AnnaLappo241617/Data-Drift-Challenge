@@ -7,6 +7,7 @@ This project is a simulated production monitoring system for fraud detection mod
 * Performance degradation
 * Data drift
 * Feature distribution shifts
+* Feature importance-aware risk analysis
 * Fraud prediction quality
 * Retraining recommendations
 
@@ -18,8 +19,9 @@ The dashboard is built with Streamlit and uses the Kaggle Credit Card Fraud Dete
 
 ## Baseline Model Training
 
-* Trains a Random Forest fraud classifier
+* Trains an XGBoost fraud classifier with dynamic class imbalance handling via `scale_pos_weight`
 * Uses the Kaggle fraud dataset as the baseline reference
+* Optimizes the prediction threshold to maximise recall subject to a minimum precision constraint
 * Logs:
 
   * Precision
@@ -27,6 +29,7 @@ The dashboard is built with Streamlit and uses the Kaggle Credit Card Fraud Dete
   * F1-score
   * ROC-AUC
   * PR-AUC
+  * Optimized prediction threshold
 
 ---
 
@@ -50,6 +53,20 @@ PSI thresholds:
 | 0.10 – 0.25 | Moderate    |
 | > 0.25      | High        |
 
+### Drift × Importance Risk Analysis
+
+Drift results are cross-referenced with XGBoost feature importances to produce a composite risk score:
+
+```
+Risk Score = PSI × Feature Importance
+```
+
+A feature is flagged as **High Risk** if it is both drifting and among the top 10 most important features. This means drift in a low-importance feature is treated differently from the same drift in a feature the model relies on heavily.
+
+This analysis is used to:
+* Generate more targeted monitoring alerts
+* Guide feature selection during retraining — low-importance high-drift features can be dropped to reduce noise
+
 ---
 
 ## Performance Monitoring
@@ -64,6 +81,7 @@ The dashboard tracks:
 * ROC-AUC
 * PR-AUC
 * Confusion Matrix
+* Threshold trade-off analysis across the full 0.01–0.50 range
 * Fraud predictions
 
 ---
@@ -87,11 +105,20 @@ The monitoring system:
 
 1. Scores incoming production batches
 2. Detects drift and degradation
-3. Raises monitoring alerts
-4. Recommends retraining when thresholds are exceeded
-5. Allows manual retraining through the dashboard
+3. Cross-references drifted features with feature importance
+4. Raises monitoring alerts (including importance-aware alerts)
+5. Recommends retraining when thresholds are exceeded
+6. Allows manual retraining through the dashboard
+7. Filters unstable low-importance features from the retrained model
 
 Retraining is intentionally separated from prediction monitoring to simulate realistic production workflows.
+
+### Retraining Strategy
+
+* Recent batches are upweighted by a factor of 4 to reflect current data patterns
+* Historical data is capped at 50,000 rows to manage compute, with all fraud rows preserved
+* Features that are high-drift but low-importance are dropped before retraining to reduce noise
+* A validation model is trained on a holdout split before the final model is promoted
 
 ---
 
@@ -100,7 +127,7 @@ Retraining is intentionally separated from prediction monitoring to simulate rea
 ```text
 Incoming Batch
         ↓
-Active Production Model
+Active Production Model (XGBoost)
         ↓
 Fraud Predictions
         ↓
@@ -108,11 +135,13 @@ Performance Evaluation
         ↓
 Drift Detection (KS + PSI)
         ↓
+Drift × Importance Risk Analysis
+        ↓
 Alert Generation
         ↓
 Retraining Recommendation
         ↓
-Optional Model Retraining
+Optional Model Retraining (with feature filtering)
 ```
 
 ---
@@ -189,7 +218,7 @@ source venv/bin/activate
 Run:
 
 ```bash
-pip install streamlit pandas numpy matplotlib scipy scikit-learn joblib
+pip install streamlit pandas numpy matplotlib scipy scikit-learn xgboost joblib
 ```
 
 ---
@@ -253,11 +282,11 @@ Use the built-in drift batches:
 Workflow:
 
 1. Select a simulated production batch
-2. Click `Process Next Batch`
+2. Click `Process Batch`
 3. Review:
 
    * Metrics
-   * Drift
+   * Drift and risk analysis
    * Fraud predictions
    * Alerts
 4. Retrain the model if recommended
@@ -277,7 +306,7 @@ Workflow:
 
 1. Upload a CSV file
 2. Select `Uploaded CSV`
-3. Click `Process Next Batch`
+3. Click `Process Batch`
 
 ---
 
@@ -300,9 +329,16 @@ PR-AUC < 90% of baseline
 5 or more moderate-drift features
 ```
 
+## Importance-Aware Drift Conditions
+
+```python
+2 or more high-importance features drifting  →  Critical alert
+1 high-importance feature drifting           →  Warning alert
+```
+
 ---
 
-# Example Automated Drift Check
+# Example Automated Alert Logic
 
 ```python
 if current_metrics['Recall'] < baseline_metrics['Recall'] * 0.8:
@@ -319,22 +355,29 @@ if high_drift_features >= 3:
 
 if moderate_drift_features >= 5:
     alert = 'Warning feature drift'
+
+if high_importance_drifting_features >= 2:
+    alert = 'Critical: high-importance features are drifting'
+
+if high_importance_drifting_features == 1:
+    alert = 'Warning: high-importance feature drifting'
 ```
 
 ---
 
 # Technologies Used
 
-| Technology   | Purpose                   |
-| ------------ | ------------------------- |
-| Python       | Core programming language |
-| Streamlit    | Interactive dashboard     |
-| Scikit-learn | Machine learning          |
-| Pandas       | Data manipulation         |
-| NumPy        | Numerical operations      |
-| SciPy        | Statistical drift tests   |
-| Matplotlib   | Visualizations            |
-| Joblib       | Model persistence         |
+| Technology   | Purpose                              |
+| ------------ | ------------------------------------ |
+| Python       | Core programming language            |
+| Streamlit    | Interactive dashboard                |
+| XGBoost      | Fraud detection classifier           |
+| Scikit-learn | Model evaluation and data splitting  |
+| Pandas       | Data manipulation                    |
+| NumPy        | Numerical operations                 |
+| SciPy        | Statistical drift tests (KS test)    |
+| Matplotlib   | Visualizations                       |
+| Joblib       | Model persistence                    |
 
 ---
 
@@ -345,6 +388,7 @@ Potential future extensions:
 * Real-time streaming data
 * Online learning models
 * SHAP explainability
+* Automated threshold recalibration per batch
 * Drift dashboards per feature group
 * Automated retraining pipelines
 * Cloud deployment
@@ -376,3 +420,4 @@ This project uses the Kaggle Credit Card Fraud Detection dataset:
 * Retraining is intentionally manual after alerts are triggered.
 * The monitoring state is persisted locally in the `monitoring_state` folder.
 * Resetting the simulation clears the monitoring state and restores the baseline model.
+* The model was changed from Random Forest to XGBoost to better handle class imbalance via `scale_pos_weight`.

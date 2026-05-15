@@ -387,7 +387,7 @@ def info_card(label: str, value: str, accent: str = "#3b82f6"):
     """, unsafe_allow_html=True)
 
 
-def style_drift_df(df: pd.DataFrame):
+def style_drift_df(df: pd.DataFrame) -> pd.io.formats.style.Styler:
     def row_style(row):
         if row.get("PSI Level") == "High":
             return ["background-color:#1a0808; color:#ff6b6b"] * len(row)

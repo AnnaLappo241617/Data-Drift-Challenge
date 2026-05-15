@@ -1,5 +1,5 @@
 {
-  "current_model_version": 2,
+  "current_model_version": 1,
   "feature_cols": [
     "Time",
     "V1",
@@ -33,9 +33,6 @@
     "Amount",
     "Hour"
   ],
-  "processed_batches": [
-    "drift_1.csv",
-    "drift_2.csv"
-  ],
-  "active_model_name": "Model v2"
+  "processed_batches": [],
+  "active_model_name": "Model v1"
 }
