@@ -187,6 +187,24 @@ The `monitoring_state` folder stores the persistent application state.
 
 ---
 
+# Requirements
+
+## Python Version
+
+Python **3.8 or higher** is required.
+
+To check your version:
+
+```bash
+python --version
+```
+
+## Internet Connection
+
+The dashboard loads **IBM Plex Sans** and **IBM Plex Mono** fonts from Google Fonts at startup. An internet connection is required for the fonts to render correctly. If you are offline, the dashboard will still function but will fall back to the browser's default monospace font.
+
+---
+
 # Installation
 
 ## 1. Clone or Download the Project
@@ -236,6 +254,22 @@ drift_4.csv
 drift_5.csv
 app.py
 ```
+
+## About the Drift CSV Files
+
+The `drift_1.csv` through `drift_5.csv` files are **simulated production batches** — slices of transaction data used to test the monitoring system. Each file represents a batch of incoming transactions that the active model will score and evaluate for drift.
+
+These files should be provided alongside the project. If you do not have them, you can generate your own by sampling from `creditcard.csv`:
+
+```python
+import pandas as pd
+
+df = pd.read_csv("creditcard.csv")
+batch = df.sample(n=5000, random_state=42)
+batch.to_csv("drift_1.csv", index=False)
+```
+
+Each batch must contain the same feature columns as `creditcard.csv` and must include the `Class` column.
 
 ---
 
@@ -411,6 +445,38 @@ This project uses the Kaggle Credit Card Fraud Detection dataset:
 * Li Ming Huang
 * Anna Lappo
 * Ema Růžičková
+
+---
+
+# Troubleshooting
+
+## Corrupted or Broken State
+
+If the dashboard throws errors on startup or behaves unexpectedly after a failed retraining, the `monitoring_state/` folder may be in a broken state. To fix this, delete the folder entirely and restart the dashboard — it will rebuild from scratch automatically:
+
+```bash
+# Windows
+rmdir /s /q monitoring_state
+
+# Mac/Linux
+rm -rf monitoring_state
+```
+
+Then rerun:
+
+```bash
+streamlit run app.py
+```
+
+Alternatively, use the **↺ Reset** button in the sidebar, which does the same thing from inside the dashboard.
+
+## XGBoost Compatibility
+
+This project uses `eval_metric="logloss"` passed directly to the `XGBClassifier` constructor. This requires **XGBoost 1.6 or higher**. If you see a warning about `eval_metric` being ignored, upgrade XGBoost:
+
+```bash
+pip install --upgrade xgboost
+```
 
 ---
 
